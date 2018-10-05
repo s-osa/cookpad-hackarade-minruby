@@ -174,7 +174,7 @@ def evaluate(exp, env)
     ary[index] = evaluate(exp[3], env)
 
   when "hash_new"
-    raise(NotImplementedError) # Problem 6
+    exp[1..-1].each_slice(2).map{|ke, ve| [evaluate(ke, env), evaluate(ve, env) ] }.to_h
 
   else
     p("error")
