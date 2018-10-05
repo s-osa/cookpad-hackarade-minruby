@@ -131,7 +131,8 @@ def evaluate(exp, env, context)
     arr = []
     i = 0
     while exp[i + 1]
-      arr[i] = exp[i + 1]
+      arr[i] = evaluate(exp[i + 1], env, context)
+      i = i + 1
     end
     arr
   when "ary_ref"
