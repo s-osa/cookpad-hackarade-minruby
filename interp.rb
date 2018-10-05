@@ -1,7 +1,6 @@
 require "minruby"
 
-# An implementation of the evaluator
-def evaluate(exp, env)
+def evaluate(exp, env, context)
   # exp: A current node of AST
   # env: An environment (explained later)
 
@@ -15,36 +14,43 @@ def evaluate(exp, env)
     exp[1] # return the immediate value as is
 
   when "+"
-    evaluate(exp[1], env) + evaluate(exp[2], env)
+    evaluate(exp[1], env, context) + evaluate(exp[2], env, context)
   when "-"
-    evaluate(exp[1], env) - evaluate(exp[2], env)
+    evaluate(exp[1], env, context) - evaluate(exp[2], env, context)
   when "*"
-    evaluate(exp[1], env) * evaluate(exp[2], env)
+    evaluate(exp[1], env, context) * evaluate(exp[2], env, context)
   when "/"
-    evaluate(exp[1], env) / evaluate(exp[2], env)
+    evaluate(exp[1], env, context) / evaluate(exp[2], env, context)
   when "%"
-    evaluate(exp[1], env) % evaluate(exp[2], env)
+    evaluate(exp[1], env, context) % evaluate(exp[2], env, context)
   when "=="
-    evaluate(exp[1], env) == evaluate(exp[2], env)
+    evaluate(exp[1], env, context) == evaluate(exp[2], env, context)
   when "!="
-    evaluate(exp[1], env) != evaluate(exp[2], env)
+    evaluate(exp[1], env, context) != evaluate(exp[2], env, context)
   when ">"
-    evaluate(exp[1], env) > evaluate(exp[2], env)
+    evaluate(exp[1], env, context) > evaluate(exp[2], env, context)
   when ">="
-    evaluate(exp[1], env) >= evaluate(exp[2], env)
+    evaluate(exp[1], env, context) >= evaluate(exp[2], env, context)
   when "<"
-    evaluate(exp[1], env) < evaluate(exp[2], env)
+    evaluate(exp[1], env, context) < evaluate(exp[2], env, context)
   when "<="
-    evaluate(exp[1], env) <= evaluate(exp[2], env)
+    evaluate(exp[1], env, context) <= evaluate(exp[2], env, context)
 
 #
 ## Problem 2: Statements and variables
 #
 
   when "stmts"
-    exp[1..-1].each do |func_call|
-      evaluate(func_call, env)
+    statements = tail(exp, 1)
+    retval = nil
+
+    i = 0
+    while i < statements.size
+      retval = evaluate(statements[i], env, context)
+      i = i + 1
     end
+
+    retval
 
   # The second argument of this method, `env`, is an "environement" that
   # keeps track of the values stored to variables.
@@ -57,7 +63,7 @@ def evaluate(exp, env)
 
   when "var_assign"
     var_name = exp[1]
-    var_value = evaluate(exp[2], env)
+    var_value = evaluate(exp[2], env, context)
     env[var_name] = var_value
 
 #
@@ -65,15 +71,15 @@ def evaluate(exp, env)
 #
 
   when "if"
-    if evaluate(exp[1], env)
-      evaluate(exp[2], env)
+    if evaluate(exp[1], env, context)
+      evaluate(exp[2], env, context)
     else
-      evaluate(exp[3], env)
+      evaluate(exp[3], env, context)
     end
 
   when "while"
-    while(evaluate(exp[1], env)) do
-      evaluate(exp[2], env)
+    while(evaluate(exp[1], env, context)) do
+      evaluate(exp[2], env, context)
     end
 
 #
@@ -81,18 +87,24 @@ def evaluate(exp, env)
 #
 
   when "func_call"
-    func = $function_definitions[exp[1]]
+    func = context[exp[1]]
 
-    if func.nil?
+    if func == nil
       # We couldn't find a user-defined function definition;
       # it should be a builtin function.
       # Dispatch upon the given function name, and do paticular tasks.
       case exp[1]
+      when "require"
+        require evaluate(exp[2], env, context)
+      when "minruby_load"
+        minruby_load()
+      when "minruby_parse"
+        minruby_parse(evaluate(exp[2], env, context))
       when "p"
         # MinRuby's `p` method is implemented by Ruby's `p` method.
-        p(evaluate(exp[2], env))
+        p(evaluate(exp[2], env, context))
       when "Integer"
-        (evaluate(exp[2], env)).to_i
+        (evaluate(exp[2], env, context)).to_i
       when "fizzbuzz"
         n = exp[2]
         if n % 3 == 0 && n % 5 == 0
@@ -105,7 +117,7 @@ def evaluate(exp, env)
           n
         end
       else
-        raise("unknown builtin function")
+        raise("unknown builtin function: #{exp[1]}")
       end
     else
 
@@ -131,29 +143,29 @@ def evaluate(exp, env)
       # For example, `a`, `b`, and `c` are the formal parameters of
       # `def foo(a, b, c)`.
 
-      real_params = exp[2..-1].map{|e| evaluate(e, env) }
-      local_env = func[:formal_params].zip(real_params).to_h
-      evaluate(func[:statement], local_env)
+      real_params = tail(exp, 2).map{|e| evaluate(e, env, context) }
+
+      i = 0
+      local_env = {}
+      while i < func["formal_params"].size
+        formal_param = func["formal_params"][i]
+        real_param = real_params[i]
+        local_env[formal_param] = real_param
+        i = i + 1
+      end
+
+      evaluate(func["statement"], local_env, context)
     end
 
   when "func_def"
-    # Function definition.
-    #
-    # Add a new function definition to function definition list.
-    # The AST of "func_def" contains function name, parameter list, and the
-    # child AST of function body.
-    # All you need is store them into $function_definitions.
-    #
-    # Advice: $function_definitions[???] = ???
-
     func_name = exp[1]
     formal_params = exp[2]
     statement = exp[3]
 
-    $function_definitions[func_name] = {
-      func_name: func_name,
-      formal_params: formal_params,
-      statement: statement,
+    context[func_name] = {
+      "func_name" => func_name,
+      "formal_params" => formal_params,
+      "statement" => statement,
     }
 
 #
@@ -161,20 +173,25 @@ def evaluate(exp, env)
 #
 
   when "ary_new"
-    exp[1..-1].map{|e| evaluate(e, env) }
+    arr = []
+    i = 0
+    while i + 1 < exp.size
+      arr[i] = exp[i + 1]
+    end
+    arr
 
   when "ary_ref"
-    ary = evaluate(exp[1], env)
-    index = evaluate(exp[2], env)
+    ary = evaluate(exp[1], env, context)
+    index = evaluate(exp[2], env, context)
     ary[index]
 
   when "ary_assign"
-    ary = evaluate(exp[1], env)
-    index = evaluate(exp[2], env)
-    ary[index] = evaluate(exp[3], env)
+    ary = evaluate(exp[1], env, context)
+    index = evaluate(exp[2], env, context)
+    ary[index] = evaluate(exp[3], env, context)
 
   when "hash_new"
-    exp[1..-1].each_slice(2).map{|ke, ve| [evaluate(ke, env), evaluate(ve, env) ] }.to_h
+    tail(exp, 1).each_slice(2).map{|ke, ve| [evaluate(ke, env, context), evaluate(ve, env, context) ] }.to_h
 
   else
     p("error")
@@ -184,8 +201,17 @@ def evaluate(exp, env)
   end
 end
 
+def tail(array, offset)
+  result = []
+  i = 0
+  while i + offset < array.size
+    result[i] = array[i + offset]
+    i = i + 1
+  end
+  result
+end
 
-$function_definitions = {
+global = {
 }
 
 env = {}
@@ -194,4 +220,4 @@ env = {}
 # `minruby_parse(str)` parses a program text given, and returns its AST
 src = minruby_load()
 ast = minruby_parse(src)
-evaluate(ast, env)
+evaluate(ast, env, global)

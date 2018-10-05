@@ -7,7 +7,7 @@ Dir.glob('test*.rb').sort.each do |f|
   end
 
   correct = `ruby #{f}`
-  answer = `ruby #{MY_PROGRAM} #{f}`
+  answer = `ruby #{MY_PROGRAM} #{MY_PROGRAM} #{f}`
 
   if correct == answer
     print "\033[92m#{f}\033[0m\n"
