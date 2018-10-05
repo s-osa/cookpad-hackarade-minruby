@@ -72,9 +72,9 @@ def evaluate(exp, env)
     end
 
   when "while"
-    # Loop.
-    raise(NotImplementedError) # Problem 3
-
+    while(evaluate(exp[1], env)) do
+      evaluate(exp[2], env)
+    end
 
 #
 ## Problem 4: Function calls
