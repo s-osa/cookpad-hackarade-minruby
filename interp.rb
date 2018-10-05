@@ -19,9 +19,7 @@ def evaluate(exp, env)
   when "-"
     evaluate(exp[1], env) - evaluate(exp[2], env)
   when "*"
-    raise(NotImplementedError) # Problem 1
-  # ... Implement other operators that you need
-
+    evaluate(exp[1], env) * evaluate(exp[2], env)
 
 #
 ## Problem 2: Statements and variables
