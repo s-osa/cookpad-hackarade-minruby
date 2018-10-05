@@ -145,7 +145,18 @@ def evaluate(exp, env, context)
     ary[index] = evaluate(exp[3], env, context)
 
   when "hash_new"
-    tail(exp, 1).each_slice(2).map{|ke, ve| [evaluate(ke, env, context), evaluate(ve, env, context) ] }.to_h
+    kvs = tail(exp, 1)
+    i = 0
+    hash = {}
+
+    while kvs[2 * i + 1]
+      k = evaluate(kvs[2 * i], env, context)
+      v = evaluate(kvs[2 * i + 1], env, context)
+      hash[k] = v
+      i = i + 1
+    end
+
+    hash
 
   else
     p("error")
