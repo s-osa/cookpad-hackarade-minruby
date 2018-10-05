@@ -79,7 +79,7 @@ def evaluate(exp, env, context)
       when "p"
         p(evaluate(exp[2], env, context))
       when "Integer"
-        (evaluate(exp[2], env, context)).to_i
+        Integer(evaluate(exp[2], env, context))
       when "fizzbuzz"
         n = exp[2]
         if n % 3 == 0 && n % 5 == 0
