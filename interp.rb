@@ -81,7 +81,6 @@ def evaluate(exp, env)
 #
 
   when "func_call"
-    # Lookup the function definition by the given function name.
     func = $function_definitions[exp[1]]
 
     if func.nil?
@@ -120,7 +119,8 @@ def evaluate(exp, env)
       # (*1) formal parameter: a variable as found in the function definition.
       # For example, `a`, `b`, and `c` are the formal parameters of
       # `def foo(a, b, c)`.
-      raise(NotImplementedError) # Problem 5
+      args = exp[2..-1].map{|e| evaluate(e, env) }
+      func.call(*args)
     end
 
   when "func_def"
@@ -160,7 +160,10 @@ def evaluate(exp, env)
 end
 
 
-$function_definitions = {}
+$function_definitions = {
+  "Integer" => Proc.new {|str| str.to_i },
+}
+
 env = {}
 
 # `minruby_load()` == `File.read(ARGV.shift)`
