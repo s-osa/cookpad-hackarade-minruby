@@ -30,11 +30,9 @@ def evaluate(exp, env)
 #
 
   when "stmts"
-    # Statements: sequential evaluation of one or more expressions.
-    #
-    # Advice 1: Insert `pp(exp)` and observe the AST first.
-    # Advice 2: Apply `evaluate` to each child of this node.
-    raise(NotImplementedError) # Problem 2
+    exp[1..-1].each do |func_call|
+      evaluate(func_call, env)
+    end
 
   # The second argument of this method, `env`, is an "environement" that
   # keeps track of the values stored to variables.
@@ -164,4 +162,6 @@ env = {}
 
 # `minruby_load()` == `File.read(ARGV.shift)`
 # `minruby_parse(str)` parses a program text given, and returns its AST
-evaluate(minruby_parse(minruby_load()), env)
+src = minruby_load()
+ast = minruby_parse(src)
+evaluate(ast, env)
