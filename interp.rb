@@ -169,7 +169,9 @@ def evaluate(exp, env)
     ary[index]
 
   when "ary_assign"
-    raise(NotImplementedError) # Problem 6
+    ary = evaluate(exp[1], env)
+    index = evaluate(exp[2], env)
+    ary[index] = evaluate(exp[3], env)
 
   when "hash_new"
     raise(NotImplementedError) # Problem 6
