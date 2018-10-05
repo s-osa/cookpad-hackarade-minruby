@@ -91,12 +91,23 @@ def evaluate(exp, env)
       when "p"
         # MinRuby's `p` method is implemented by Ruby's `p` method.
         p(evaluate(exp[2], env))
-      # ... Problem 4
+      when "Integer"
+        (evaluate(exp[2], env)).to_i
+      when "fizzbuzz"
+        n = exp[2]
+        if n % 3 == 0 && n % 5 == 0
+          'fizzbuzz'
+        elsif n % 3 == 0
+          'fizz'
+        elsif n %5 == 0
+          'buzz'
+        else
+          n
+        end
       else
         raise("unknown builtin function")
       end
     else
-
 
 #
 ## Problem 5: Function definition
@@ -161,18 +172,6 @@ end
 
 
 $function_definitions = {
-  "Integer" => Proc.new {|str| str.to_i },
-  "fizzbuzz" => Proc.new{|n|
-    if n % 3 == 0 && n % 5 == 0
-      'fizzbuzz'
-    elsif n % 3 == 0
-      'fizz'
-    elsif n %5 == 0
-      'buzz'
-    else
-      n
-    end
-  },
 }
 
 env = {}
