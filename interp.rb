@@ -95,15 +95,21 @@ def evaluate(exp, env, context)
         raise("unknown builtin function: #{exp[1]}")
       end
     else
-      real_params = tail(exp, 2).map{|e| evaluate(e, env, context) }
-
+      _real_params = tail(exp, 2)
       i = 0
-      local_env = {}
-      while func["formal_params"][i]
-        formal_param = func["formal_params"][i]
-        real_param = real_params[i]
-        local_env[formal_param] = real_param
+      real_params = []
+      while _real_params[i]
+        real_params[i] = evaluate(_real_params[i], env, context)
         i = i + 1
+      end
+
+      j = 0
+      local_env = {}
+      while func["formal_params"][j]
+        formal_param = func["formal_params"][j]
+        real_param = real_params[j]
+        local_env[formal_param] = real_param
+        j = j + 1
       end
 
       evaluate(func["statement"], local_env, context)
