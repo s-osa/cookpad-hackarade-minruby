@@ -35,7 +35,7 @@ def evaluate(exp, env, context)
     retval = nil
 
     i = 0
-    while i < statements.size
+    while statements[i]
       retval = evaluate(statements[i], env, context)
       i = i + 1
     end
@@ -99,7 +99,7 @@ def evaluate(exp, env, context)
 
       i = 0
       local_env = {}
-      while i < func["formal_params"].size
+      while func["formal_params"][i]
         formal_param = func["formal_params"][i]
         real_param = real_params[i]
         local_env[formal_param] = real_param
@@ -124,7 +124,7 @@ def evaluate(exp, env, context)
   when "ary_new"
     arr = []
     i = 0
-    while i + 1 < exp.size
+    while exp[i + 1]
       arr[i] = exp[i + 1]
     end
     arr
@@ -142,8 +142,13 @@ def evaluate(exp, env, context)
 
   else
     p("error")
-    pp(exp)
-    pp(env)
+    pp(
+      {
+        "context" => context,
+        "exp" => exp,
+        "env" => env,
+      }
+    )
     raise("unknown node")
   end
 end
@@ -151,7 +156,7 @@ end
 def tail(array, offset)
   result = []
   i = 0
-  while i + offset < array.size
+  while array[i + offset]
     result[i] = array[i + offset]
     i = i + 1
   end
